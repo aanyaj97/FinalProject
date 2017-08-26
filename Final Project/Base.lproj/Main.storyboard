@@ -24,9 +24,17 @@
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="99J-Uf-XQj">
                                 <rect key="frame" x="50" y="72" width="281" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Add Event"/>
+                                <state key="normal" title="Get Events"/>
                                 <connections>
-                                    <action selector="buttonTappedWithSender:" destination="BYZ-38-t0r" eventType="touchUpInside" id="2aR-PM-czy"/>
+                                    <action selector="runCode:" destination="BYZ-38-t0r" eventType="touchUpInside" id="YjT-oT-dD1"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dtx-TK-azY">
+                                <rect key="frame" x="146" y="155" width="88" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Create Event"/>
+                                <connections>
+                                    <action selector="newEvent:" destination="BYZ-38-t0r" eventType="touchUpInside" id="BcB-7x-zcU"/>
                                 </connections>
                             </button>
                         </subviews>
