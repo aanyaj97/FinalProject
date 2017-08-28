@@ -77,7 +77,7 @@ class ViewController: UIViewController {
         do {
             try eventStore.save(newEvent, span: .thisEvent, commit: true)
         } catch let err as NSError {
-            print ("An error occured (err.description)")
+            print (err.description)
         }
         
     }
@@ -92,7 +92,7 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-
+//test test
 }
 
 //issues: - events are being pulled correctly, but are returning in GMT not CDT.
