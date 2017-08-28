@@ -74,14 +74,11 @@ class ViewController: UIViewController {
         newEvent.startDate = startTime!
         newEvent.endDate = endTime!
         
-        eventStore.save
-        
-        //error handling ? of saving a new event
-   //     do {
-     //       try eventStore.save(newEvent, span: .thisEvent, commit: true)
-       //     } catch {
-         //       print ("Event did not save")
-   //     }
+        do {
+            try eventStore.save(newEvent, span: .thisEvent, commit: true)
+        } catch let err as NSError {
+            print ("An error occured (err.description)")
+        }
         
     }
 
