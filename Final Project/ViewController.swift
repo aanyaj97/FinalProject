@@ -15,13 +15,9 @@ class ViewController: UIViewController {
     var conflictArray: [EKEvent]? //array of events
     var existingCalendarArray: [EKCalendar]? //array of existing calendars
     var calendarsForEvents: [EKCalendar]? //also array of existing calendars (can this be removed?)
-    
-    
-    
+    var timeSchedule: [Date] = []
     
     func pullEventInfo() {
-        
-        var timeSchedule: [Date] = []
         
         //formats date according to entry (will go after date selector is implemented)
         let dateFormatter = DateFormatter()
@@ -58,10 +54,10 @@ class ViewController: UIViewController {
         
         //formats date according to entry (will go after date selector is implemented)
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM/dd/yyyy HH:mm"
+        dateFormatter.dateFormat = "MM/dd/yyyy HH:mm zzz"
         
-        let startTime = dateFormatter.date(from: "08/24/2017 23:00")
-        let endTime = dateFormatter.date(from: "08/24/2017 23:30")
+        let startTime = dateFormatter.date(from: "08/25/2017 00:30 GMT")
+        let endTime = dateFormatter.date(from: "08/25/2017 01:30 GMT")
         
         //accesses list of calendars and stores them as EKCalendar objects in an array
         self.calendarsForEvents = eventStore.calendars(for: EKEntityType.event)
@@ -83,7 +79,23 @@ class ViewController: UIViewController {
         }
     }
     
-    func testForConflict() {
+    func findIfConflict() {
+        for i in 1...timeSchedule.count-2 {
+            if timeSchedule[i-1] > timeSchedule[i] {
+                print ("out of order")
+            }
+        }
+        
+    }
+    
+    func findTime() {
+        let dateFormatter = DateFormatter()
+        //let dateComponents = NSDateComponents()
+        //let hour = dateComponents.hour
+        dateFormatter.dateFormat = "MM/dd/yyy zzz"
+        dateFormatter.timeZone = NSTimeZone(name: "UTC")! as TimeZone
+        
+        
         
     }
     
@@ -91,6 +103,7 @@ class ViewController: UIViewController {
     
     @IBAction func runCode(_ sender: UIButton) {
         pullEventInfo()
+        findIfConflict()
     }
     
     @IBAction func newEvent(_ sender: UIButton) {
@@ -112,5 +125,8 @@ class ViewController: UIViewController {
 //issues: - events are being pulled correctly, but are returning in GMT not CDT.
 //issues: - events are being saved correctly, but are saving in CDT and not GMT.
 
-//to do: find how to compare members of the array to see if they are all in order! 
-//reverse engineer that to find empty slots ?? 
+//to do: find how to compare members of the array to see if they are all in order! DONE
+//reverse engineer that to find empty slots ??: 
+//FIRST: find time around one event on a given day
+//SECOND: find time around two events on a given day
+//THIRD: find time in between two events on a given day
