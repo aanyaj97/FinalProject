@@ -41,7 +41,7 @@ class ViewController: UIViewController {
         dateFormatter.dateFormat = "MM/dd/yyy HH:mm zzz"
         
         let searchStart = NSDate() as Date
-        let searchEnd = dateFormatter.date(from: "08/26/2017 00:00 GMT")
+        let searchEnd = dateFormatter.date(from: "09/1/2017 00:00 GMT")
         
         endOfSchedulingPeriod = searchEnd //assigns the end of the period to schedule in as the end of the period to search events for
         
@@ -103,9 +103,11 @@ class ViewController: UIViewController {
             }
         }
        scheduleWithIntervalArray = scheduleArray
-        print (scheduleWithIntervalArray[0].startOfTimeSlot)
-        print (scheduleWithIntervalArray[0].durationOfTimeSlot())
-        print (scheduleWithIntervalArray[0].endOfTimeSlot)
+        for i in scheduleWithIntervalArray {
+        print (i.startOfTimeSlot)
+        print (i.durationOfTimeSlot())
+        print (i.endOfTimeSlot)
+        }
     }
     
     
@@ -150,3 +152,5 @@ class ViewController: UIViewController {
 //1-user does not already have conflicting events (MAYBE)
 //2-user does not have events that span over midnight (MAYBE)
 //3-user does not have all-day events(MAYBE)
+
+//next steps is to create an event when the program finds an open slot
