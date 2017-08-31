@@ -12,26 +12,27 @@ import EventKit
 class ViewController: UIViewController {
     
     let eventStore = EKEventStore() //event store
-    var conflictArray: [EKEvent]? //array of events
+    var eventPullArray: [EKEvent]? //array of existing events
     var existingCalendarArray: [EKCalendar]? //array of existing calendars
-    var calendarsForEvents: [EKCalendar]? //also array of existing calendars (can this be removed?)
-    var timeSchedule: [Date] = [] //array of all events in the day
     var eventCreateStartTime: Date?
     var eventCreateEndTime: Date?
+    var endOfSchedulingPeriod: Date?
     
-    class scheduleWithIntervalComponents {
+    class timeSlotSchedule {
         var startOfTimeSlot: Date
-        var durationOfTimeSlotMins: Double
-        var durationOfTimeSlotHrs: Double
+        var endOfTimeSlot: Date
         
-        init(startOfTimeSlot: Date, durationOfTimeSlotMins: Double, durationOfTimeSlotHrs: Double) {
+        func durationOfTimeSlot() -> Double {
+            return endOfTimeSlot.timeIntervalSince(startOfTimeSlot) //returns duration of time slot
+        }
+        
+        init(startOfTimeSlot: Date, endOfTimeSlot: Date) {
             self.startOfTimeSlot = startOfTimeSlot
-            self.durationOfTimeSlotMins = durationOfTimeSlotMins
-            self.durationOfTimeSlotHrs = durationOfTimeSlotHrs
+            self.endOfTimeSlot = endOfTimeSlot
         }
     }
     
-    var scheduleWithIntervalArray: [scheduleWithIntervalComponents] = []
+    var scheduleWithIntervalArray: [timeSlotSchedule] = []
     
     func pullEventInfo() {
         
@@ -39,47 +40,24 @@ class ViewController: UIViewController {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MM/dd/yyy HH:mm zzz"
         
-        let searchStart = dateFormatter.date(from: "08/25/2017 00:00 GMT")
+        let searchStart = NSDate() as Date
         let searchEnd = dateFormatter.date(from: "08/26/2017 00:00 GMT")
         
-        //new variable to store events
-        var pullEventSchedule: [Date] = []
+        endOfSchedulingPeriod = searchEnd //assigns the end of the period to schedule in as the end of the period to search events for
         
         //accesses list of calendars in Event Store that contain events and stores them in an array of EKCalendars
         self.existingCalendarArray = eventStore.calendars(for: EKEntityType.event)
         
         
         //creates predicate (query) for events within the date range provided
-        let eventPullPredicate = eventStore.predicateForEvents(withStart: searchStart!, end: searchEnd!, calendars: existingCalendarArray)
+        let eventPullPredicate = eventStore.predicateForEvents(withStart: searchStart, end: searchEnd!, calendars: existingCalendarArray)
         
         //accesses list of events matching predicate and stores them in an array of EKEvents
         //sorts list of pulled events by start date
-        self.conflictArray = eventStore.events(matching: eventPullPredicate).sorted{
+        self.eventPullArray = eventStore.events(matching: eventPullPredicate).sorted{
             (ev1: EKEvent, ev2: EKEvent) -> Bool in
             return ev1.startDate.compare(ev2.startDate) == ComparisonResult.orderedAscending
         }
-        
-        //adds start of day to Schedule
-        if let searchStart = searchStart {
-            pullEventSchedule.append(searchStart)
-        }
-        
-        //if the conflict array has members, print the titles of the calendars
-        if let conflictArray = conflictArray {
-            if conflictArray.count >= 1 {
-            for i in 0...(conflictArray.count-1) {
-                pullEventSchedule.append(conflictArray[i].startDate)
-                pullEventSchedule.append(conflictArray[i].endDate)
-                }
-            }
-        }
-        
-        //adds end of day to Schedule
-        if let searchEnd = searchEnd {
-            pullEventSchedule.append(searchEnd)
-        }
-        
-        timeSchedule = pullEventSchedule //writes timeSchedule variable as the one just pulled
     }
     
 //    func createNewEvent() {
@@ -113,41 +91,25 @@ class ViewController: UIViewController {
     
     func findOpenings() {
         
-        var scheduleArray: [scheduleWithIntervalComponents] = [] //array for open time slots
+        var scheduleArray: [timeSlotSchedule] = [] //array for open time slots
         
-        if timeSchedule.count >= 1 { //if there is a member in time schedule array
-            for i in 0...(timeSchedule.count/2) { //for half of the elements count
-                if i % 2 == 0 { //if the count is even (so it is the first entry, third, etc)
-        
-                    let durationInMinutes = timeSchedule[i+1].timeIntervalSince(timeSchedule[i])/60 //give me timespan between end of first event and start of second event in mins
-                    
-                    let durationInHours = timeSchedule[i+1].timeIntervalSince(timeSchedule[i])/60/60 //same in hours
-                    
-                    scheduleArray.append(scheduleWithIntervalComponents(startOfTimeSlot: timeSchedule[i], durationOfTimeSlotMins: durationInMinutes, durationOfTimeSlotHrs: durationInHours))
-                    
-                    print("start time of time slot is: \(timeSchedule[i])")
-                    print("timeslot in minutes: \(durationInMinutes)")
-                    print("timeslot in hours: \(durationInHours)")
-                    print("end time of time slot is: \(timeSchedule[i+1])")
+        if let eventPullArray = eventPullArray {
+        if eventPullArray.count >= 1 { //if there is a member in time schedule array
+            scheduleArray.append(timeSlotSchedule(startOfTimeSlot: NSDate() as Date, endOfTimeSlot: eventPullArray[0].startDate))
+            for i in 0...(eventPullArray.count-2) { //for half of the elements count
+                scheduleArray.append(timeSlotSchedule(startOfTimeSlot: eventPullArray[i].endDate, endOfTimeSlot: eventPullArray[i+1].startDate))
                 }
+            scheduleArray.append(timeSlotSchedule(startOfTimeSlot: (eventPullArray.last?.endDate)!, endOfTimeSlot: endOfSchedulingPeriod!))
             }
-            
         }
        scheduleWithIntervalArray = scheduleArray
+        print (scheduleWithIntervalArray[0].startOfTimeSlot)
+        print (scheduleWithIntervalArray[0].durationOfTimeSlot())
+        print (scheduleWithIntervalArray[0].endOfTimeSlot)
     }
     
+    
     func createEventInOpening() {
-        var timePreferenceArray: [scheduleWithIntervalComponents] = [] //array to sort open times with which have most time available
-        for i in scheduleWithIntervalArray {
-            if i.durationOfTimeSlotMins >= 60.0 {
-                timePreferenceArray.append(i)
-            }
-        }
-        let primeTime = timePreferenceArray.sorted(by: {$0.durationOfTimeSlotMins > $1.durationOfTimeSlotMins})
-        
-        for j in primeTime {
-            print (j.durationOfTimeSlotMins)
-        }
     }
 
 
