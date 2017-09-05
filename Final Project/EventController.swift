@@ -11,40 +11,46 @@ import EventKit
 
 class EventController: NSObject {
     let eventStore = EKEventStore() //event store access
-    var eventPullArray: [EKEvent]? //array of existing events
+    var eventArray: [EKEvent]? //array of existing events
     var existingCalendarArray: [EKCalendar]? //array of existing calendars
-    var eventCreateStartTime: [Date]? //variable to store start times for new events
-    var eventCreateEndTime: [Date]? //variable to store end times for new events
+    var eventCreateStartTime: [Date]? //array to store start times for new events
+    var eventCreateEndTime: [Date]? //array to store end times for new events
     var endOfSchedulingPeriod: Date? //date for end of event pull search AND end of empty time slot search
+    let calendar = Calendar.current
     
     class TimeSlotSchedule {
         var startOfTimeSlot: Date
         var endOfTimeSlot: Date
-        var canSchedule: Bool
         
         func durationOfTimeSlot() -> Double {
             return endOfTimeSlot.timeIntervalSince(startOfTimeSlot) //returns duration of time slot
         }
         
-        init(startOfTimeSlot: Date, endOfTimeSlot: Date, canSchedule: Bool) {
+        init(startOfTimeSlot: Date, endOfTimeSlot: Date) {
             self.startOfTimeSlot = startOfTimeSlot
             self.endOfTimeSlot = endOfTimeSlot
-            self.canSchedule = canSchedule
         }
     }
     
     var scheduleWithIntervalArray: [TimeSlotSchedule] = []
     
-    func pullEventInfo() {
+    func pullEventInfo() { //pulls all existing calendar events
         
         //formats date according to entry (this will be deleted after date spinner UIComponent is implemented)
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MM/dd/yyy HH:mm zzz"
         
         let searchStart = NSDate() as Date //retrieves current time
-        let searchEnd = dateFormatter.date(from: "09/1/2017 00:00 GMT") //retrieves current time + requested time schedule period (user input)
+        let daysToAdd = 7 //variable to store days to add to start time
+        let searchEnd = calendar.date(byAdding: .day, value: daysToAdd, to: searchStart)
+        //retrieves current time + requested time schedule period (will be user input but is currently one week)
         
         endOfSchedulingPeriod = searchEnd //assigns the end of the period to schedule in as the end of the period to search events for
+        
+        print (searchStart)
+        if let searchEnd = searchEnd {
+            print (searchEnd)
+        }
         
         //accesses list of calendars in Event Store that contain events and stores them in an array of EKCalendars
         self.existingCalendarArray = eventStore.calendars(for: EKEntityType.event)
@@ -54,76 +60,69 @@ class EventController: NSObject {
         
         //accesses list of events from Event Store matching predicate and stores them in an array of EKEvents
         //sorts list of pulled events by start date
-        self.eventPullArray = eventStore.events(matching: eventPullPredicate).sorted{
+        let eventPullArray = eventStore.events(matching: eventPullPredicate).sorted{
             (ev1: EKEvent, ev2: EKEvent) -> Bool in
             return ev1.startDate.compare(ev2.startDate) == ComparisonResult.orderedAscending
         }
+        
+        if eventPullArray.count >= 1 {
+            self.eventArray = eventPullArray
+        } else {
+            self.eventArray = []
+        }
     }
     
-    func createNewEvent() {
-        
-        //formats date according to entry (will go after date selector is implemented)
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM/dd/yyyy HH:mm zzz"
-        
-        let startTime = eventCreateStartTime
-        let endTime = eventCreateEndTime
-        
-        //defines properties of new event
+    func createEvent(startTime: Date, duration: Int) { //create a new event given a start and end time
         let newEvent = EKEvent(eventStore: eventStore)
         if let existingCalendarArray = existingCalendarArray {
             if existingCalendarArray.count >= 1 {
                 newEvent.calendar = existingCalendarArray[0]
             }
         }
-        newEvent.title = "Test Event from xCode"
-        if let startTime = startTime {
-            if let endTime = endTime {
-                newEvent.startDate = startTime[0]
-                newEvent.endDate = endTime[0]
-            }
+        
+        newEvent.title = "Test Event"
+        newEvent.startDate = startTime
+        let durationTime = duration
+        let endTime = calendar.date(byAdding: .minute, value: durationTime, to: startTime)
+        if let endTime = endTime {
+        newEvent.endDate = endTime
         }
         
-        //error handling: tries to save event, in case of error, it will print error
-        do {
+        do { //tries to save event, in case of an error it prints the error
             try eventStore.save(newEvent, span: .thisEvent, commit: true)
         } catch let err as NSError {
             print (err.description)
         }
     }
     
-    func findOpenings() {
+    func findAllOpenings() {
         
         var scheduleArray: [TimeSlotSchedule] = [] //array for open time slots
         
-        if let eventPullArray = eventPullArray {
-            if eventPullArray.count >= 1 { //if there is a member in time schedule array
-                scheduleArray.append(TimeSlotSchedule(startOfTimeSlot: NSDate() as Date, endOfTimeSlot: eventPullArray[0].startDate, canSchedule: false ))
-                for i in 0...(eventPullArray.count-2) { //for half of the elements count
-                    scheduleArray.append(TimeSlotSchedule(startOfTimeSlot: eventPullArray[i].endDate, endOfTimeSlot: eventPullArray[i+1].startDate, canSchedule: false))
-                }
-                scheduleArray.append(TimeSlotSchedule(startOfTimeSlot: (eventPullArray.last?.endDate)!, endOfTimeSlot: endOfSchedulingPeriod!, canSchedule: false))
+        if let eventArray = eventArray {
+            if eventArray.count >= 1 { //if there is a member in existing event array
+                scheduleArray.append(TimeSlotSchedule(startOfTimeSlot: NSDate() as Date, endOfTimeSlot: eventArray[0].startDate)) //find time difference between search time and start of first event
+                for i in 0...(eventArray.count-2) { //for each event in the array except last one, pull the end time and assign to it to the opening of a time slot and pull the start time of the next event and assign it to the end of that time slot. This will therefore create an array with each member having a start time, end time, and duration in which new events can be scheduled.
+                    scheduleArray.append(TimeSlotSchedule(startOfTimeSlot: eventArray[i].endDate, endOfTimeSlot: eventArray[i+1].startDate))
+                } //at the end, calculate the time difference between the end of the last event and the end of the scheduling period.
+                scheduleArray.append(TimeSlotSchedule(startOfTimeSlot: (eventArray.last?.endDate)!, endOfTimeSlot: endOfSchedulingPeriod!))
+            } else { //if there are no events, make the schedulable time cover all time from the search start until the search end
+                scheduleArray.append(TimeSlotSchedule(startOfTimeSlot: NSDate() as Date, endOfTimeSlot: endOfSchedulingPeriod!))
             }
         }
-        scheduleWithIntervalArray = scheduleArray
-        for i in scheduleWithIntervalArray {
-            print (i.startOfTimeSlot)
-            print (i.durationOfTimeSlot())
-            print (i.endOfTimeSlot)
+        scheduleWithIntervalArray = scheduleArray //now this array has all of the schedulable slots
+    }
+    
+    func createNewEventInOpening() {
+    var timeSlotFound = false
+        while timeSlotFound == false {
+            for i in scheduleWithIntervalArray {
+                if i.durationOfTimeSlot() >= 60 {
+                    timeSlotFound = true
+                    createEvent(startTime: i.startOfTimeSlot, duration: 60)
+                }
+            }
         }
     }
     
-    
-    //    func findAllApplicableOpenings() {
-    //        for i in scheduleWithIntervalArray {
-    //            if i.durationOfTimeSlot() >= 60 {
-    //                i.canSchedule = true
-    //                }
-    //            if i.canSchedule == true {
-    //                eventCreateStartTime?.append(i.startOfTimeSlot)
-    //            }
-    //            }
-    //    }
-
-
 }

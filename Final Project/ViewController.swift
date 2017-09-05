@@ -10,9 +10,12 @@ import UIKit
 import EventKit
 
 class ViewController: UIViewController {
-    
+    let eventController = EventController()
 
     @IBAction func runCode(_ sender: UIButton) {
+        eventController.pullEventInfo()
+        eventController.findAllOpenings()
+        eventController.createNewEventInOpening()
         
     }
     
