@@ -13,7 +13,7 @@ class ViewController: UIViewController {
     let eventController = EventController()
 
     @IBAction func runCode(_ sender: UIButton) {
-        eventController.findTimeAndScheduleEvent(name: "Gym", frequency: 1)
+        eventController.findTimeAndScheduleEvent(name: "Work on App", frequency: 4)
         
     }
     
@@ -45,6 +45,9 @@ class ViewController: UIViewController {
 //put it in a separate file - sep 9
 //try to write a test - sep 9
 
-//MAJOR MAJOR FIX: IT IS SCHEDULING IN EACH TIME SLOT, NOT JUST THE FIRST ONE! 
-//Why?
-//How to fix?
+//MAJOR MAJOR FIX: IT IS SCHEDULING IN EACH TIME SLOT, NOT JUST THE FIRST ONE! - solved
+//new problem: it is scheduling one per time slot but we want to be able to schedule 2 within a given time slot - solved
+
+
+//add to github: enhancement: schedule only once per calendar day (make this an option)
+//enhancement: if scheduling within the same time slot, put a time gap in between

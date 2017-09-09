@@ -22,6 +22,8 @@ class EventController: NSObject {
     var startOfSchedulingPeriod: Date? //date for start of event pull search AND start of empty time slot search
     var endOfSchedulingPeriod: Date? //date for end of event pull search AND end of empty time slot search
     var scheduleWithIntervalArray: [TimeSlotSchedule] = []
+    var scheduledEventCount = 0
+    
    
     //this class stores data which contains information on empty timeslots in the user's schedule
     class TimeSlotSchedule {
@@ -62,7 +64,7 @@ class EventController: NSObject {
         
         let dateTime = NSDate() as Date //current date and time
         
-        let searchStart = roundDate(date: dateTime) //rounds current time to 15 minutes from now as this is the earliest new events will be scheduled for conveience
+        let searchStart = roundDate(date: dateTime) //rounds current time to 15 minutes from now as this is the earliest new events will be scheduled for conveience's sake
         
         let daysToAdd = 7 //variable to store days to add to start time
         
@@ -148,27 +150,35 @@ class EventController: NSObject {
     }
     
     func createNewEventInOpening(name: String) {
-        var timeSlotFound = false //variable to see if event is scheduled or not
-            while timeSlotFound == false {
-                for i in scheduleWithIntervalArray {
-                    if i.durationOfTimeSlot() >= 60 {
-                        timeSlotFound = true //if event time is found, stop searching for event slots
-                        createEvent(name: name, startTime: i.startOfTimeSlot, duration: 60)
-                    
-                }
+        var scheduled = false //variable to see if an event is scheduled
+                for i in scheduleWithIntervalArray { //for each member of the array with time slots
+                    if i.durationOfTimeSlot() >= 60 { //if the span of the time slot is more than 1 hour
+                        while scheduled == false { //as long as an event has not been scheduled yet
+                        createEvent(name: name, startTime: i.startOfTimeSlot, duration: 60) //create an event
+                        scheduledEventCount += 1 //add to the event counter
+                        scheduled = true //make it true so that no more events are scheduled from this search
+                    }
             }
         }
     }
     
     func findTimeAndScheduleEvent(name: String, frequency: Int) {
-        var count = 0
-        while count < frequency {
+        scheduledEventCount = 0
+        pullEventInfo()
+        findAllOpenings()
+        while scheduledEventCount < frequency {
+            createNewEventInOpening(name: name)
             pullEventInfo()
             findAllOpenings()
-            createNewEventInOpening(name: name)
-            count += 1
+        }
+        
+        
+        //        scheduledEventCount = 0
+//        while scheduledEventCount < frequency {
+//            pullEventInfo()
+//            findAllOpenings()
+//            createNewEventInOpening(name: name)
         }
     }
     
-    
-}
+
