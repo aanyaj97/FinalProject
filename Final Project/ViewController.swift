@@ -49,5 +49,6 @@ class ViewController: UIViewController {
 //new problem: it is scheduling one per time slot but we want to be able to schedule 2 within a given time slot - solved
 
 
-//add to github: enhancement: schedule only once per calendar day (make this an option)
+//add to github: enhancement: schedule only once per calendar day (make this an option) / evenly schedule per scheduling period
 //enhancement: if scheduling within the same time slot, put a time gap in between
+//

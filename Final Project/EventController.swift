@@ -169,7 +169,7 @@ class EventController: NSObject {
         while scheduledEventCount < frequency {
             createNewEventInOpening(name: name)
             pullEventInfo()
-            findAllOpenings()
+            findAllOpenings() //see if you can restructure this section to make it make more sense
         }
         
         
