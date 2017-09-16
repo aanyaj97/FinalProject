@@ -30,8 +30,8 @@ class EventController: NSObject {
         var startOfTimeSlot: Date //start of time slot opening
         var endOfTimeSlot: Date //end of time slot opening
         
-        func durationOfTimeSlot() -> Double {
-            return endOfTimeSlot.timeIntervalSince(startOfTimeSlot) //returns duration of time slot
+        func durationOfTimeSlot() -> Int {
+            return Int(endOfTimeSlot.timeIntervalSince(startOfTimeSlot)) //returns duration of time slot
         } //calculates duration of time slot opening in minutes
         
         init(startOfTimeSlot: Date, endOfTimeSlot: Date) {
@@ -60,13 +60,13 @@ class EventController: NSObject {
     }
 
     
-    func pullEventInfo() { //pulls all existing calendar events
+    func pullEventInfo(span: Int) { //pulls all existing calendar events, inputs span as the number of dates to reschedule over
         
         let dateTime = NSDate() as Date //current date and time
         
         let searchStart = roundDate(date: dateTime) //rounds current time to 15 minutes from now as this is the earliest new events will be scheduled for conveience's sake
         
-        let daysToAdd = 7 //variable to store days to add to start time
+        let daysToAdd = span //variable to store days to add to start time
         
         let searchEnd = calendar.date(byAdding: .day, value: daysToAdd, to: searchStart)
         //retrieves current time + requested time schedule period (will be user input but is currently one week)
@@ -149,27 +149,35 @@ class EventController: NSObject {
         }
     }
     
-    func createNewEventInOpening(name: String) {
-        var scheduled = false //variable to see if an event is scheduled
-                for i in scheduleWithIntervalArray { //for each member of the array with time slots
-                    if i.durationOfTimeSlot() >= 60 { //if the span of the time slot is more than 1 hour
-                        while scheduled == false { //as long as an event has not been scheduled yet
-                        createEvent(name: name, startTime: i.startOfTimeSlot, duration: 60) //create an event
-                        scheduledEventCount += 1 //add to the event counter
-                        scheduled = true //make it true so that no more events are scheduled from this search
-                    }
+    func findViableTimeSlots(duration: Int) {
+        for i in 0...(scheduleWithIntervalArray.count - 1) { //search the schedule interval array
+            if scheduleWithIntervalArray[i].durationOfTimeSlot() < duration { //if a timeslot is not long enough
+                scheduleWithIntervalArray.remove(at: i) //remove it from the search
             }
         }
     }
     
-    func findTimeAndScheduleEvent(name: String, frequency: Int) {
+    func selectRandomTimeSlot() -> Int {
+        let randomIndex = Int(arc4random_uniform(UInt32(scheduleWithIntervalArray.count)))
+        return randomIndex
+    }
+    
+    func createNewEventInOpening(name: String, duration: Int) {
+        var scheduled = false //variable to see if an event is scheduled
+        while scheduled == false {
+            createEvent(name: name, startTime: scheduleWithIntervalArray[selectRandomTimeSlot()].startOfTimeSlot, duration: duration)
+                        scheduledEventCount += 1 //add to the event counter
+                        scheduled = true //make it true so that no more events are scheduled from this search
+        }
+    }
+    
+    func findTimeAndScheduleEvent(name: String, frequency: Int, duration: Int, span: Int) {
         scheduledEventCount = 0
-        pullEventInfo()
-        findAllOpenings()
         while scheduledEventCount < frequency {
-            createNewEventInOpening(name: name)
-            pullEventInfo()
-            findAllOpenings() //see if you can restructure this section to make it make more sense
+            pullEventInfo(span: span)
+            findAllOpenings()
+            createNewEventInOpening(name: name, duration: duration)
+            //see if you can restructure this section to make it make more sense
         }
         
         
