@@ -151,7 +151,7 @@ class EventController: NSObject {
     
     func findViableTimeSlots(duration: Int) {
         for i in 0...(scheduleWithIntervalArray.count - 1) { //search the schedule interval array
-            if scheduleWithIntervalArray[i].durationOfTimeSlot() < duration { //if a timeslot is not long enough
+            if scheduleWithIntervalArray[i].durationOfTimeSlot() < duration { //if a timeslot is not long enough // some fatal error here???? ? maybe with the count
                 scheduleWithIntervalArray.remove(at: i) //remove it from the search
             }
         }
@@ -166,18 +166,18 @@ class EventController: NSObject {
         var scheduled = false //variable to see if an event is scheduled
         while scheduled == false {
             createEvent(name: name, startTime: scheduleWithIntervalArray[selectRandomTimeSlot()].startOfTimeSlot, duration: duration)
-                        scheduledEventCount += 1 //add to the event counter
-                        scheduled = true //make it true so that no more events are scheduled from this search
+                scheduledEventCount += 1 //add to the event counter
+                scheduled = true //make it true so that no more events are scheduled from this search
         }
     }
     
     func findTimeAndScheduleEvent(name: String, frequency: Int, duration: Int, span: Int) {
         scheduledEventCount = 0
         while scheduledEventCount < frequency {
-            pullEventInfo(span: span)
-            findAllOpenings()
-            createNewEventInOpening(name: name, duration: duration)
-            //see if you can restructure this section to make it make more sense
+            pullEventInfo(span: span) //pulls event info for the given number of days
+            findAllOpenings()//finds all openings in the event pull
+            findViableTimeSlots(duration: duration) //removes time slots that aren't long enough
+            createNewEventInOpening(name: name, duration: duration)  //creates a new event in a random opening
         }
         
         
