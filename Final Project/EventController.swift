@@ -96,7 +96,7 @@ class EventController: NSObject {
         } //if there are events, fill the eventArray with them. Otherwise, assign the eventArray to an empty array
     }
     
-    func findAllOpenings() {
+    func findAllOpenings(duration: Int) {
         
         var scheduleArray: [TimeSlotSchedule] = [] //array for open time slots
         
@@ -120,7 +120,12 @@ class EventController: NSObject {
                 scheduleArray.append(TimeSlotSchedule(startOfTimeSlot: startOfSchedulingPeriod!, endOfTimeSlot: endOfSchedulingPeriod!))
             }
         }
-        scheduleWithIntervalArray = scheduleArray //now this array has all of the schedulable slots
+        
+        for i in scheduleArray { //search the schedule interval array
+            if i.durationOfTimeSlot() > duration { //if a timeslot is long enough
+        scheduleWithIntervalArray.append(i) //append it to this array
+            }
+        }
     }
     
     func createEvent(name: String, startTime: Date, duration: Int) { //create a new event given a start and end time and name
@@ -149,14 +154,6 @@ class EventController: NSObject {
         }
     }
     
-    func findViableTimeSlots(duration: Int) {
-        for i in 0...(scheduleWithIntervalArray.count - 1) { //search the schedule interval array
-            if scheduleWithIntervalArray[i].durationOfTimeSlot() < duration { //if a timeslot is not long enough // some fatal error here???? ? maybe with the count
-                scheduleWithIntervalArray.remove(at: i) //remove it from the search
-            }
-        }
-    }
-    
     func selectRandomTimeSlot() -> Int {
         let randomIndex = Int(arc4random_uniform(UInt32(scheduleWithIntervalArray.count)))
         return randomIndex
@@ -165,9 +162,11 @@ class EventController: NSObject {
     func createNewEventInOpening(name: String, duration: Int) {
         var scheduled = false //variable to see if an event is scheduled
         while scheduled == false {
-            createEvent(name: name, startTime: scheduleWithIntervalArray[selectRandomTimeSlot()].startOfTimeSlot, duration: duration)
+            let startSchedule = scheduleWithIntervalArray[selectRandomTimeSlot()].startOfTimeSlot
+            createEvent(name: name, startTime: startSchedule, duration: duration)
                 scheduledEventCount += 1 //add to the event counter
                 scheduled = true //make it true so that no more events are scheduled from this search
+                print ("event scheduled starting at \(startSchedule) with title \(name) ")
         }
     }
     
@@ -175,18 +174,11 @@ class EventController: NSObject {
         scheduledEventCount = 0
         while scheduledEventCount < frequency {
             pullEventInfo(span: span) //pulls event info for the given number of days
-            findAllOpenings()//finds all openings in the event pull
-            findViableTimeSlots(duration: duration) //removes time slots that aren't long enough
+            findAllOpenings(duration: duration)//finds all openings in the event pull
             createNewEventInOpening(name: name, duration: duration)  //creates a new event in a random opening
-        }
-        
-        
-        //        scheduledEventCount = 0
-//        while scheduledEventCount < frequency {
-//            pullEventInfo()
-//            findAllOpenings()
-//            createNewEventInOpening(name: name)
         }
     }
     
+}
+
 

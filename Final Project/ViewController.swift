@@ -13,7 +13,7 @@ class ViewController: UIViewController {
     let eventController = EventController()
 
     @IBAction func runCode(_ sender: UIButton) {
-        eventController.findTimeAndScheduleEvent(name: "Gym", frequency: 4, duration: 45, span: 3)
+        eventController.findTimeAndScheduleEvent(name: "Shower", frequency: 3, duration: 30, span: 3)
         
     }
     
