@@ -105,6 +105,7 @@ class EventController: NSObject {
     func findAllOpenings(duration: Int) {
         
         var scheduleArray: [TimeSlotSchedule] = [] //array for open time slots
+        var scheduleFilteredArray: [TimeSlotSchedule] = [] //array for open time slots given set duration
         
         if let eventArray = eventArray {
             if eventArray.count >= 1 { //if there are 1 or more members in existing event array
@@ -129,12 +130,23 @@ class EventController: NSObject {
         
         for i in scheduleArray { //search the schedule interval array
             if i.durationOfTimeSlot() >= duration { //if a timeslot is long enough
-        scheduleWithIntervalArray.append(i) //append it to this array
+        scheduleFilteredArray.append(i) //append it to this array
             }
         }
         
+        scheduleWithIntervalArray = scheduleFilteredArray
+        
+        print ("Schedule Array, unfiltered:")
+        
+        for i in 0...scheduleArray.count-1 {
+            print ("Event Slot #\(i) starts at \(scheduleArray[i].startOfTimeSlot) and lasts \(scheduleArray[i].durationOfTimeSlot())") //this is correct
+        }
+        
+
+        print ("Schedule Array, timeslots too short removed:")
+        
         for i in 0...scheduleWithIntervalArray.count-1 {
-            print ("Event Slot #\(i) starts at \(scheduleWithIntervalArray[i].startOfTimeSlot) and lasts \(scheduleWithIntervalArray[i].durationOfTimeSlot())")
+            print ("Event Slot #\(i) starts at \(scheduleWithIntervalArray[i].startOfTimeSlot) and lasts \(scheduleWithIntervalArray[i].durationOfTimeSlot())") //there is an issue here - solved! it was because the schedulewithinterval array was not refreshing each while loop
         }
     }
     
@@ -182,12 +194,12 @@ class EventController: NSObject {
         }
     
     func findTimeAndScheduleEvent(name: String, frequency: Int, duration: Int, span: Int) {
-        scheduledEventCount = 0 // no events are scheduled
-        while scheduledEventCount < frequency { //while the number of events are less than the number desired
+       scheduledEventCount = 0 // no events are scheduled
+       while scheduledEventCount < frequency { //while the number of events are less than the number desired
             pullEventInfo(span: span) //pulls event info for the given number of days
             findAllOpenings(duration: duration)//finds all openings in the event pull
             createNewEventInOpening(name: name, duration: duration)  //creates a new event in a random opening
-        }
+       }
         }
 }
 
