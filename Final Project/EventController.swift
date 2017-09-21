@@ -31,7 +31,7 @@ class EventController: NSObject {
         var endOfTimeSlot: Date //end of time slot opening
         
         func durationOfTimeSlot() -> Int {
-            return Int(endOfTimeSlot.timeIntervalSince(startOfTimeSlot)) //returns duration of time slot
+            return Int(endOfTimeSlot.timeIntervalSince(startOfTimeSlot))/60 //returns duration of time slot
         } //calculates duration of time slot opening in minutes
         
         init(startOfTimeSlot: Date, endOfTimeSlot: Date) {
@@ -94,6 +94,12 @@ class EventController: NSObject {
         } else {
             self.eventArray = []
         } //if there are events, fill the eventArray with them. Otherwise, assign the eventArray to an empty array
+
+        if eventArray!.count > 1 {
+            for i in 0...eventArray!.count-1 {
+                print ("Event \(i) is called \(eventArray![i].title) and it starts at \(eventArray![i].startDate) and ends at \(eventArray![i].endDate)")
+            }
+        }
     }
     
     func findAllOpenings(duration: Int) {
@@ -122,9 +128,13 @@ class EventController: NSObject {
         }
         
         for i in scheduleArray { //search the schedule interval array
-            if i.durationOfTimeSlot() > duration { //if a timeslot is long enough
+            if i.durationOfTimeSlot() >= duration { //if a timeslot is long enough
         scheduleWithIntervalArray.append(i) //append it to this array
             }
+        }
+        
+        for i in 0...scheduleWithIntervalArray.count-1 {
+            print ("Event Slot #\(i) starts at \(scheduleWithIntervalArray[i].startOfTimeSlot) and lasts \(scheduleWithIntervalArray[i].durationOfTimeSlot())")
         }
     }
     
@@ -162,23 +172,23 @@ class EventController: NSObject {
     func createNewEventInOpening(name: String, duration: Int) {
         var scheduled = false //variable to see if an event is scheduled
         while scheduled == false {
-            let startSchedule = scheduleWithIntervalArray[selectRandomTimeSlot()].startOfTimeSlot
-            createEvent(name: name, startTime: startSchedule, duration: duration)
+            let randomSlot = selectRandomTimeSlot()
+            let scheduleStart = scheduleWithIntervalArray[randomSlot].startOfTimeSlot
+            createEvent(name: name, startTime: scheduleStart, duration: duration)
                 scheduledEventCount += 1 //add to the event counter
                 scheduled = true //make it true so that no more events are scheduled from this search
-                print ("event scheduled starting at \(startSchedule) with title \(name) ")
+                print (" Slot num:\(randomSlot) and event scheduled starting at \(scheduleStart) with title \(name) ")
         }
-    }
+        }
     
     func findTimeAndScheduleEvent(name: String, frequency: Int, duration: Int, span: Int) {
-        scheduledEventCount = 0
-        while scheduledEventCount < frequency {
+        scheduledEventCount = 0 // no events are scheduled
+        while scheduledEventCount < frequency { //while the number of events are less than the number desired
             pullEventInfo(span: span) //pulls event info for the given number of days
             findAllOpenings(duration: duration)//finds all openings in the event pull
             createNewEventInOpening(name: name, duration: duration)  //creates a new event in a random opening
         }
-    }
-    
+        }
 }
 
 
